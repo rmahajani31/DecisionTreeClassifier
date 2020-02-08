@@ -1,0 +1,11 @@
+Gender,Color,Sport,Dominant Hand,Home State,Allergy,Food,class
+Male,Yellow,Football,Left Handed,Maryland,Allergies,Pizza,A
+Female,Yellow,Football,Left Handed,Georgia,No Allergies,Burgers,B
+Female,Green,Football,Right Handed,Maryland,Allergies,Pizza,C
+Female,Yellow,Football,Left Handed,Georgia,No Allergies,Burgers,B
+Male,Yellow,Basketball,Left Handed,Maryland,No Allergies,Pizza,B
+Male,Green,Basketball,Left Handed,Georgia,No Allergies,Burgers,B
+Female,Yellow,Football,Right Handed,Maryland,No Allergies,Burgers,B
+Male,Yellow,Football,Left Handed,Georgia,No Allergies,Burgers,B
+Female,Yellow,Basketball,Left Handed,Maryland,Allergies,Pizza,A
+Male,Green,Basketball,Left Handed,Georgia,No Allergies,Burgers,A
