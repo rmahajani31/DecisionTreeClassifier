@@ -27,7 +27,7 @@ class DecisionTreeClassifier:
 
     def calculate_gini_index(self, data):
         total_count = data.shape[0]
-        classes = np.asarray(data.classes.unique())
+        classes = np.asarray(data["class"].unique())
         gini_sum = 0
         for index, cur_class in enumerate(classes):
             prob = data.loc[data["class"] == cur_class, :].shape[0] / total_count
@@ -35,7 +35,7 @@ class DecisionTreeClassifier:
         return 1 - gini_sum
 
     def get_majority_class(self, data):
-        return data["class"].mode()
+        return data["class"].mode().values[0]
 
     def calculate_split_entropy(self, data, left_data, right_data):
         total_count = data.shape[0]
@@ -74,21 +74,22 @@ class DecisionTreeClassifier:
         max_criteria_val = 0
         min_col = 0
         for index, col in enumerate(cols):
-            if self.split_criteria == "info gain":
-                criteria_val = self.calculate_info_gain(data_entropy, data, col)
-            elif self.split_criteria == "info gain ratio":
-                criteria_val = self.calculate_info_gain(data_entropy, data, col, True)
-            elif self.split_criteria == "gini gain":
-                criteria_val = self.calculate_gini_gain(data_entropy, data, col)
-            else:
-                criteria_val = self.calculate_gini_gain(data_entropy, data, col, True)
-            if criteria_val > max_criteria_val:
-                max_criteria_val = criteria_val
-                min_col = index
+            if index < len(cols) - 1:
+                if self.split_criteria == "info gain":
+                    criteria_val = self.calculate_info_gain(data_entropy, data, col)
+                elif self.split_criteria == "info gain ratio":
+                    criteria_val = self.calculate_info_gain(data_entropy, data, col, True)
+                elif self.split_criteria == "gini gain":
+                    criteria_val = self.calculate_gini_gain(data_entropy, data, col)
+                else:
+                    criteria_val = self.calculate_gini_gain(data_entropy, data, col, True)
+                if criteria_val > max_criteria_val:
+                    max_criteria_val = criteria_val
+                    min_col = index
         return min_col
 
     def train(self):
-        self.tree = self.train_with_depth(self.data, self.max_depth)
+        self.tree = Tree(self.train_with_depth(self.data, self.max_depth))
 
     def train_with_depth(self, data, maxDepth):
         if maxDepth == 0:
@@ -98,8 +99,9 @@ class DecisionTreeClassifier:
         else:
             cur = Node()
             min_col = self.get_min_col(data)
-            data_left = data.loc[data[min_col] == 0, :]
-            data_right = data.loc[data[min_col] == 1, :]
+            cols = list(data)
+            data_left = data.loc[data[cols[min_col]] == 0, :]
+            data_right = data.loc[data[cols[min_col]] == 1, :]
             cur.col = min_col
             cur.value = self.get_majority_class(data)
             if data_left.shape[0] > 0:
@@ -108,8 +110,7 @@ class DecisionTreeClassifier:
                 cur.add_child(self.train_with_depth(data_right, maxDepth-1))
             return cur
 
-    def predict(self, row):
-        sample = row.values()
+    def predict(self, sample):
         return self.predict_with_node(sample, self.tree.head)
 
     def predict_with_node(self, sample, cur):
