@@ -65,19 +65,19 @@ class TestDecisionTreeClassifier(unittest.TestCase):
 
     def test_calculate_info_gain_f1(self):
         data = self.dt_classifier.data
-        self.assertAlmostEqual(self.dt_classifier.calculate_info_gain(self.dt_classifier.calculate_entropy(data), data, "Gender"), 0.1245112498)
+        self.assertAlmostEqual(self.dt_classifier.calculate_info_gain(self.dt_classifier.calculate_entropy(data), data, "Gender")[0], 0.1245112498)
 
     def test_calculate_info_gain_f5(self):
         data = self.dt_classifier.data
-        self.assertAlmostEqual(self.dt_classifier.calculate_info_gain(self.dt_classifier.calculate_entropy(data), data, "Home State"), 0.1735337494)
+        self.assertAlmostEqual(self.dt_classifier.calculate_info_gain(self.dt_classifier.calculate_entropy(data), data, "Home State")[0], 0.1735337494)
 
     def test_calculate_gini_gain_f2(self):
         data = self.dt_classifier.data
-        self.assertAlmostEqual(self.dt_classifier.calculate_gini_gain(self.dt_classifier.calculate_gini_index(data), data, "Color"), 0.0542857143)
+        self.assertAlmostEqual(self.dt_classifier.calculate_gini_gain(self.dt_classifier.calculate_gini_index(data), data, "Color")[0], 0.0542857143)
 
     def test_calculate_gini_gain_f7(self):
         data = self.dt_classifier.data
-        self.assertAlmostEqual(self.dt_classifier.calculate_gini_gain(self.dt_classifier.calculate_gini_index(data), data, "Food"), 0.123333333333)
+        self.assertAlmostEqual(self.dt_classifier.calculate_gini_gain(self.dt_classifier.calculate_gini_index(data), data, "Food")[0], 0.123333333333)
 
     def test_train(self):
         self.dt_classifier.train()

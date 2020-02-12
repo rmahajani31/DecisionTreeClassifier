@@ -34,6 +34,24 @@ class DecisionTreeClassifier:
             gini_sum += pow(prob, 2)
         return 1 - gini_sum
 
+    def get_all_splits(self, data, col):
+        col_vals = data[col].unique()
+        return self.get_all_splits_helper(col_vals, 0, np.array([]), np.array([]))
+
+    def get_all_splits_helper(self, col_vals, col_ind, left_split, right_split):
+        if col_ind == len(col_vals):
+            return np.array([[left_split, right_split]])
+        left_result = np.array([[[]]])
+        right_result = np.array([[[]]])
+        if left_split.shape[0] < len(col_vals) - 1:
+            left_result = self.get_all_splits_helper(col_vals, col_ind+1, np.append(left_split, col_vals[col_ind]), right_split)
+        if right_split.shape[0] < len(col_vals) - 1:
+            right_result = self.get_all_splits_helper(col_vals, col_ind+1, left_split, np.append(right_split, col_vals[col_ind]))
+        if left_result.size > 0 and right_result.size > 0:
+            return np.concatenate((left_result, right_result), axis=0)
+        return left_result if left_result.size > 0 else right_result
+
+
     def get_majority_class(self, data):
         return data["class"].mode().values[0]
 
@@ -47,46 +65,68 @@ class DecisionTreeClassifier:
 
     def calculate_info_gain(self, original_entropy, data, col, use_gain_ratio=False):
         total_count = data.shape[0]
-        split_data_left = data.loc[data[col] == 0, :]
-        split_data_right = data.loc[data[col] == 1, :]
-        entropy = split_data_left.shape[0] / total_count * self.calculate_entropy(split_data_left) + split_data_right.shape[0] / total_count * self.calculate_entropy(split_data_right)
-        gain = original_entropy - entropy
-        if use_gain_ratio:
-            split_entropy = self.calculate_split_entropy(data, split_data_left, split_data_right)
-            return gain / split_entropy
-        return gain
+        splits = self.get_all_splits(data, col)
+        max_gain = 0
+        max_left_split = np.array([])
+        max_right_split = np.array([])
+        for split in splits:
+            split_data_left = data.loc[data[col].isin(split[0]), :]
+            split_data_right = data.loc[data[col].isin(split[1]), :]
+            entropy = split_data_left.shape[0] / total_count * self.calculate_entropy(split_data_left) + split_data_right.shape[0] / total_count * self.calculate_entropy(split_data_right)
+            gain = original_entropy - entropy
+            if use_gain_ratio:
+                split_entropy = self.calculate_split_entropy(data, split_data_left, split_data_right)
+                gain /= split_entropy
+            if gain > max_gain:
+                max_gain = gain
+                max_left_split = split_data_left
+                max_right_split = split_data_right
+        return (max_gain, max_left_split, max_right_split)
 
     def calculate_gini_gain(self, original_gini_index, data, col, use_gain_ratio=False):
         total_count = data.shape[0]
-        split_data_left = data.loc[data[col] == 0, :]
-        split_data_right = data.loc[data[col] == 1, :]
-        gini_index = split_data_left.shape[0] / total_count * self.calculate_gini_index(split_data_left) + split_data_right.shape[
-            0] / total_count * self.calculate_gini_index(split_data_right)
-        gain = original_gini_index - gini_index
-        if use_gain_ratio:
-            split_entropy = self.calculate_split_gini_index(data, split_data_left, split_data_right)
-            return gain / split_entropy
-        return gain
+        splits = self.get_all_splits(data, col)
+        max_gain = 0
+        max_left_split = np.array([])
+        max_right_split = np.array([])
+        for split in splits:
+            split_data_left = data.loc[data[col].isin(split[0]), :]
+            split_data_right = data.loc[data[col].isin(split[1]), :]
+            gini_index = split_data_left.shape[0] / total_count * self.calculate_gini_index(split_data_left) + \
+                      split_data_right.shape[0] / total_count * self.calculate_gini_index(split_data_right)
+            gain = original_gini_index - gini_index
+            if use_gain_ratio:
+                split_gini_index = self.calculate_split_gini_index(data, split_data_left, split_data_right)
+                gain /= split_gini_index
+            if gain > max_gain:
+                max_gain = gain
+                max_left_split = split_data_left
+                max_right_split = split_data_right
+        return (max_gain, max_left_split, max_right_split)
 
-    def get_min_col(self, data):
+    def get_max_col(self, data):
         cols = list(data)
         data_entropy = self.calculate_entropy(data)
         max_criteria_val = 0
-        min_col = 0
+        max_col = 0
+        max_left_split = np.array([])
+        max_right_split = np.array([])
         for index, col in enumerate(cols):
             if index < len(cols) - 1:
                 if self.split_criteria == "info gain":
-                    criteria_val = self.calculate_info_gain(data_entropy, data, col)
+                    (criteria_val, left_split, right_split) = self.calculate_info_gain(data_entropy, data, col)
                 elif self.split_criteria == "info gain ratio":
-                    criteria_val = self.calculate_info_gain(data_entropy, data, col, True)
+                    (criteria_val, left_split, right_split) = self.calculate_info_gain(data_entropy, data, col, True)
                 elif self.split_criteria == "gini gain":
-                    criteria_val = self.calculate_gini_gain(data_entropy, data, col)
+                    (criteria_val, left_split, right_split) = self.calculate_gini_gain(data_entropy, data, col)
                 else:
-                    criteria_val = self.calculate_gini_gain(data_entropy, data, col, True)
+                    (criteria_val, left_split, right_split) = self.calculate_gini_gain(data_entropy, data, col, True)
                 if criteria_val > max_criteria_val:
                     max_criteria_val = criteria_val
-                    min_col = index
-        return min_col
+                    max_left_split = left_split
+                    max_right_split = right_split
+                    max_col = index
+        return (max_col, max_left_split, max_right_split)
 
     def train(self):
         self.tree = Tree(self.train_with_depth(self.data, self.max_depth))
@@ -98,16 +138,14 @@ class DecisionTreeClassifier:
             return leaf
         else:
             cur = Node()
-            min_col = self.get_min_col(data)
+            (max_col, max_left_split, max_right_split) = self.get_max_col(data)
             cols = list(data)
-            data_left = data.loc[data[cols[min_col]] == 0, :]
-            data_right = data.loc[data[cols[min_col]] == 1, :]
-            cur.col = min_col
+            cur.col = max_col
             cur.value = self.get_majority_class(data)
-            if data_left.shape[0] > 0:
-                cur.add_child(self.train_with_depth(data_left, maxDepth-1))
-            if data_right.shape[0] > 0:
-                cur.add_child(self.train_with_depth(data_right, maxDepth-1))
+            if max_left_split.shape[0] > 0:
+                cur.add_child(self.train_with_depth(max_left_split, maxDepth-1))
+            if max_right_split.shape[0] > 0:
+                cur.add_child(self.train_with_depth(max_right_split, maxDepth-1))
             return cur
 
     def predict(self, sample):
