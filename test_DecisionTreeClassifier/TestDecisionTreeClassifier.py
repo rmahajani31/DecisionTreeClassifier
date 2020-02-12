@@ -7,7 +7,7 @@ class TestDecisionTreeClassifier(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         cls.test_file = "test_encoder.csv"
-        cls.dt_classifier = DecisionTreeClassifier(cls.test_file, "info gain", 1, 2)
+        cls.dt_classifier = DecisionTreeClassifier(cls.test_file, "info gain", 1)
         cls.en = Encoder(cls.dt_classifier.data, ["Gender", "Color", "Sport", "Dominant Hand", "Home State", "Allergy", "Food"])
         cls.dt_classifier.data = cls.en.encode()
 

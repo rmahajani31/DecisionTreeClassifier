@@ -4,11 +4,10 @@ import math
 from Tree import *
 
 class DecisionTreeClassifier:
-    def __init__(self, filepath, split_criteria, max_depth, max_splits):
+    def __init__(self, filepath, split_criteria, max_depth):
         self.filepath = filepath
         self.split_criteria = split_criteria
         self.max_depth = max_depth
-        self.max_splits = max_splits
         self.data = self.load_data()
         self.tree = Tree()
 
