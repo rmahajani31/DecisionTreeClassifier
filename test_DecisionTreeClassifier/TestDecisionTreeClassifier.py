@@ -9,7 +9,7 @@ class TestDecisionTreeClassifier(unittest.TestCase):
         cls.test_file = "test_encoder.csv"
         cls.dt_classifier = DecisionTreeClassifier(cls.test_file, "info gain", 1)
         cls.en = Encoder(cls.dt_classifier.data, ["Gender", "Color", "Sport", "Dominant Hand", "Home State", "Allergy", "Food"])
-        cls.dt_classifier.data = cls.en.encode()
+        #cls.dt_classifier.data = cls.en.encode()
 
     def test_calculate_entropy(self):
         data = self.dt_classifier.data
@@ -81,7 +81,7 @@ class TestDecisionTreeClassifier(unittest.TestCase):
 
     def test_train(self):
         self.dt_classifier.train()
-        self.assertEqual(self.dt_classifier.predict([0, 1, 0, 1, 1, 1, 0]), "B")
-        self.assertEqual(self.dt_classifier.predict([0, 1, 0, 1, 1, 0, 0]), "A")
+        self.assertEqual(self.dt_classifier.predict(["Male", "Yellow", "Football", "Left Handed", "Maryland", "No Allergies", 5.43]), "B")
+        self.assertEqual(self.dt_classifier.predict([0, 1, 0, 1, 1, "Allergies", 6.8]), "A")
 
 

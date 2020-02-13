@@ -68,6 +68,8 @@ class DecisionTreeClassifier:
         max_gain = 0
         max_left_split = np.array([])
         max_right_split = np.array([])
+        max_left_split_cats = np.array([])
+        max_right_split_cats = np.array([])
         for split in splits:
             split_data_left = data.loc[data[col].isin(split[0]), :]
             split_data_right = data.loc[data[col].isin(split[1]), :]
@@ -80,7 +82,9 @@ class DecisionTreeClassifier:
                 max_gain = gain
                 max_left_split = split_data_left
                 max_right_split = split_data_right
-        return (max_gain, max_left_split, max_right_split)
+                max_left_split_cats = split[0]
+                max_right_split_cats = split[1]
+        return (max_gain, max_left_split, max_right_split, max_left_split_cats, max_right_split_cats)
 
     def calculate_gini_gain(self, original_gini_index, data, col, use_gain_ratio=False):
         total_count = data.shape[0]
@@ -88,6 +92,8 @@ class DecisionTreeClassifier:
         max_gain = 0
         max_left_split = np.array([])
         max_right_split = np.array([])
+        max_left_split_cats = np.array([])
+        max_right_split_cats = np.array([])
         for split in splits:
             split_data_left = data.loc[data[col].isin(split[0]), :]
             split_data_right = data.loc[data[col].isin(split[1]), :]
@@ -101,7 +107,9 @@ class DecisionTreeClassifier:
                 max_gain = gain
                 max_left_split = split_data_left
                 max_right_split = split_data_right
-        return (max_gain, max_left_split, max_right_split)
+                max_left_split_cats = split[0]
+                max_right_split_cats = split[1]
+        return (max_gain, max_left_split, max_right_split, max_left_split_cats, max_right_split_cats)
 
     def get_max_col(self, data):
         cols = list(data)
@@ -110,22 +118,26 @@ class DecisionTreeClassifier:
         max_col = 0
         max_left_split = np.array([])
         max_right_split = np.array([])
+        max_left_split_cats = np.array([])
+        max_right_split_cats = np.array([])
         for index, col in enumerate(cols):
             if index < len(cols) - 1:
                 if self.split_criteria == "info gain":
-                    (criteria_val, left_split, right_split) = self.calculate_info_gain(data_entropy, data, col)
+                    (criteria_val, left_split, right_split, left_split_cats, right_split_cats) = self.calculate_info_gain(data_entropy, data, col)
                 elif self.split_criteria == "info gain ratio":
-                    (criteria_val, left_split, right_split) = self.calculate_info_gain(data_entropy, data, col, True)
+                    (criteria_val, left_split, right_split, left_split_cats, right_split_cats) = self.calculate_info_gain(data_entropy, data, col, True)
                 elif self.split_criteria == "gini gain":
-                    (criteria_val, left_split, right_split) = self.calculate_gini_gain(data_entropy, data, col)
+                    (criteria_val, left_split, right_split, left_split_cats, right_split_cats) = self.calculate_gini_gain(data_entropy, data, col)
                 else:
-                    (criteria_val, left_split, right_split) = self.calculate_gini_gain(data_entropy, data, col, True)
+                    (criteria_val, left_split, right_split, left_split_cats, right_split_cats) = self.calculate_gini_gain(data_entropy, data, col, True)
                 if criteria_val > max_criteria_val:
                     max_criteria_val = criteria_val
                     max_left_split = left_split
                     max_right_split = right_split
+                    max_left_split_cats = left_split_cats
+                    max_right_split_cats = right_split_cats
                     max_col = index
-        return (max_col, max_left_split, max_right_split)
+        return (max_col, max_left_split, max_right_split, max_left_split_cats, max_right_split_cats)
 
     def train(self):
         self.tree = Tree(self.train_with_depth(self.data, self.max_depth))
@@ -137,10 +149,12 @@ class DecisionTreeClassifier:
             return leaf
         else:
             cur = Node()
-            (max_col, max_left_split, max_right_split) = self.get_max_col(data)
+            (max_col, max_left_split, max_right_split, max_left_split_cats, max_right_split_cats) = self.get_max_col(data)
             cols = list(data)
             cur.col = max_col
             cur.value = self.get_majority_class(data)
+            cur.left_split_cats = max_left_split_cats
+            cur.right_split_cats = max_right_split_cats
             if max_left_split.shape[0] > 0:
                 cur.add_child(self.train_with_depth(max_left_split, maxDepth-1))
             if max_right_split.shape[0] > 0:
@@ -153,8 +167,8 @@ class DecisionTreeClassifier:
     def predict_with_node(self, sample, cur):
         if cur.col == -1:
             return cur.value
-        if sample[cur.col] == 0 and len(cur.children) > 0:
+        if sample[cur.col] in cur.left_split_cats and len(cur.children) > 0:
             return self.predict_with_node(sample, cur.children[0])
-        if sample[cur.col] == 1 and len(cur.children) > 1:
+        if sample[cur.col] in cur.right_split_cats and len(cur.children) > 1:
             return self.predict_with_node(sample, cur.children[1])
         return cur.value
